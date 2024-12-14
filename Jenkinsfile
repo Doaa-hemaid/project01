@@ -28,7 +28,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to Dev Namespace') {
+        stage('Deploy to test Namespace') {
             steps {
                 echo 'Deploying...'
                deployK8sApplication(NAMESPACE, DOCKER_IMAGE, K8SCREDENTIALS, MINIKUBE_IP)
