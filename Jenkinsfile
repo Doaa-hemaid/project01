@@ -16,7 +16,7 @@ pipeline {
 
            steps {
                 echo 'Building...'
-                dockerBuildAndPush(DOCKER_IMAGE,'docker-hub-log')
+                dockerBuildAndPush(DOCKER_IMAGE,'docker-hub-credentials')
                 }
             }
         
@@ -36,7 +36,7 @@ pipeline {
                 }
             }
         }
-    }
+    
 
     post {
         success {
