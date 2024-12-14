@@ -1,50 +1,37 @@
 pipeline {
-   agent { label 'ivolve' }
+    agent { label 'ivolve' }
 
     environment {
         DOCKER_IMAGE_BASE = 'doaahemaid01/my-app'
         IMAGE_TAG = "${env.BUILD_ID}-${new Date().format('yyyyMMddHHmmss')}"
         DOCKER_IMAGE = "${DOCKER_IMAGE_BASE}:${IMAGE_TAG}"
-        MINIKUBEIP = '192.168.49.2'
+        MINIKUBE_IP = '192.168.49.2'
+        NAMESPACE = 'test'
+        K8SCREDENTIALS = 'k8s-test'
     }
 
     stages {
         stage('Build Image') {
-            steps {
-                echo 'Building Docker image...'
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials',
-                                  usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh """
-                        docker build -t $DOCKER_IMAGE .
-                        echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
-                        docker push $DOCKER_IMAGE
-                    """
+
+           steps {
+                echo 'Building...'
+                dockerBuildAndPush(DOCKER_IMAGE,'docker-hub-log')
                 }
             }
-        }
+        
 
         stage('Clean Local Images') {
             steps {
                 echo 'Cleaning up local Docker images...'
-                sh """
-                    docker rmi $DOCKER_IMAGE || true
-                """
+                cleanDockerImage (DOCKER_IMAGE)
             }
         }
-    
 
         stage('Deploy to Dev Namespace') {
             steps {
-                echo 'Deploying to Dev namespace...'
-                withCredentials([string(credentialsId: 'k8s-dev', variable: 'api_token')]) {
-                  
-                    sh """
-                        
-                        kubectl --token $api_token --server https://$MINIKUBEIP:8443 \
-                        --insecure-skip-tls-verify=true --validate=false apply -f myapp.yaml
-                    """
-                   
-                    
+                echo 'Deploying...'
+               deployK8sApplication(NAMESPACE, DOCKER_IMAGE, K8SCREDENTIALS, MINIKUBE_IP)
+           
                 }
             }
         }
